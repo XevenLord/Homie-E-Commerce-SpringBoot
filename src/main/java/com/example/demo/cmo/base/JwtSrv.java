@@ -44,7 +44,7 @@ public class JwtSrv {
 
     public boolean isTokenValid(String token, UserDetails usrDtls) {
         final String usrnm = extractUsrnm(token);
-        return (usrnm.equals(usrDtls.getUsername()) && !isTokenExpired(token))
+        return (usrnm.equals(usrDtls.getUsername()) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {

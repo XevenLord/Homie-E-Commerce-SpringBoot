@@ -1,23 +1,21 @@
-package com.example.demo.cmo.sec.model;
+package com.example.demo.sec.model;
 
-import com.example.demo.cmo.sec.enums.RoleEnum;
+import com.example.demo.sec.enums.RoleEnum;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 
 @Data
 @Entity
-@Setter
-@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "sec_usr")
 public class SecUsr implements UserDetails {
     @Id

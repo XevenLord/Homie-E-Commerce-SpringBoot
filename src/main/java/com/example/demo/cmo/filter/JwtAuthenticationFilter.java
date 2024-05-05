@@ -1,4 +1,4 @@
-package com.example.demo.cmo.config;
+package com.example.demo.cmo.filter;
 
 import com.example.demo.cmo.base.JwtSrv;
 import jakarta.servlet.FilterChain;

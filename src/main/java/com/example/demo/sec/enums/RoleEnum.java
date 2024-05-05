@@ -1,4 +1,4 @@
-package com.example.demo.cmo.sec.enums;
+package com.example.demo.sec.enums;
 
 public enum RoleEnum {
     ADMIN, GUEST, CUSTOMER, STAFF
