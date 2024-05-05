@@ -25,12 +25,16 @@ public class SecUsr implements UserDetails {
     private String usernm;
     private String eml;
     private String pw;
+
     @Enumerated(EnumType.STRING)
     private RoleEnum role;
 
+    @OneToMany(mappedBy = "secUsr")
+    private List<SecTkn> tokens;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return role.getAuthorities();
     }
 
     @Override

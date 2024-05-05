@@ -1,6 +1,7 @@
 package com.example.demo.cmo.filter;
 
 import com.example.demo.cmo.base.JwtSrv;
+import com.example.demo.sec.repository.SecTknRepo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsService usrDtlsSrv;
 
+    private final SecTknRepo secTknRepo;
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -42,7 +45,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         usrEml = jwtSrv.extractUsrnm(jwt);
         if (usrEml != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails usrDtls = this.usrDtlsSrv.loadUserByUsername(usrEml);
-            if (jwtSrv.isTokenValid(jwt, usrDtls)) {
+            boolean isTokenVld = secTknRepo.findByTkn(jwt)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+            if (jwtSrv.isTokenValid(jwt, usrDtls) && isTokenVld) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         usrDtls,
                         null,
