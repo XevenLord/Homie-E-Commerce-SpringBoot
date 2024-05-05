@@ -14,6 +14,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 
+import static com.example.demo.sec.enums.RoleEnum.ADMIN;
+import static com.example.demo.sec.enums.RoleEnum.SUPERADMIN;
+import static org.springframework.http.HttpMethod.*;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -31,6 +35,18 @@ public class SecCfg {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/v1/auth/**").permitAll();
+                    auth.requestMatchers("/api/v1/auth/**");
+                    auth.requestMatchers("/api/v1/management/**").hasAnyRole(SUPERADMIN.name(), ADMIN.name());
+                    auth.requestMatchers(GET, "/api/v1/management/**").hasAnyAuthority(SUPERADMIN.name(), ADMIN.name());
+                    auth.requestMatchers(POST, "/api/v1/management/**").hasAnyAuthority(SUPERADMIN.name(), ADMIN.name());
+                    auth.requestMatchers(PUT, "/api/v1/management/**").hasAnyAuthority(SUPERADMIN.name(), ADMIN.name());
+                    auth.requestMatchers(DELETE, "/api/v1/management/**").hasAnyAuthority(SUPERADMIN.name(), ADMIN.name());
+
+                    auth.requestMatchers("/api/v1/admin/**").hasRole(SUPERADMIN.name());
+                    auth.requestMatchers(GET, "/api/v1/admin/**").hasAuthority(SUPERADMIN.name());
+                    auth.requestMatchers(POST, "/api/v1/admin/**").hasAuthority(SUPERADMIN.name());
+                    auth.requestMatchers(PUT, "/api/v1/admin/**").hasAuthority(SUPERADMIN.name());
+                    auth.requestMatchers(DELETE, "/api/v1/admin/**").hasAuthority(SUPERADMIN.name());
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

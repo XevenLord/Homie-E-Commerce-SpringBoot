@@ -5,12 +5,14 @@ import com.example.demo.auth.AuthRsp;
 import com.example.demo.auth.RgstrReq;
 import com.example.demo.auth.service.AuthSrv;
 import com.example.demo.cmo.base.JwtSrv;
-import com.example.demo.sec.enums.RoleEnum;
 import com.example.demo.sec.enums.TknEnum;
 import com.example.demo.sec.model.SecTkn;
 import com.example.demo.sec.model.SecUsr;
 import com.example.demo.sec.repository.SecTknRepo;
 import com.example.demo.sec.repository.SecUsrRepo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -43,14 +46,16 @@ public class AuthSrvImpl implements AuthSrv {
                 .usernm(rgstrReq.getUsernm())
                 .eml(rgstrReq.getEml())
                 .pw(pwEncoder.encode(rgstrReq.getPw()))
-                .role(RoleEnum.USER)
+                .role(rgstrReq.getRole())
                 .build();
 
-        secUsrRepo.save(usr);
+        SecUsr savedUsr = secUsrRepo.save(usr);
         String jwtToken = jwtSrv.generateToken(usr);
-        saveUsrTkn(usr, jwtToken);
+        String refreshTkn = jwtSrv.generateRefreshToken(usr);
+        saveUsrTkn(savedUsr, jwtToken);
         return AuthRsp.builder()
-                .token(jwtToken)
+                .accessTkn(jwtToken)
+                .refreshTkn(refreshTkn)
                 .build();
     }
 
@@ -64,11 +69,39 @@ public class AuthSrvImpl implements AuthSrv {
         );
         SecUsr usr = secUsrRepo.findByEml(authReq.getEml()).orElseThrow();
         String jwtToken = jwtSrv.generateToken(usr);
+        String refreshToken = jwtSrv.generateRefreshToken(usr);
         revokeAllUsrTkns(usr);
         saveUsrTkn(usr, jwtToken);
         return AuthRsp.builder()
-                .token(jwtToken)
+                .accessTkn(jwtToken)
+                .refreshTkn(refreshToken)
                 .build();
+    }
+
+    @Override
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final String authHdr = request.getHeader("Authorization");
+        final String refreshToken;
+        final String usrEml;
+        if (authHdr == null || !authHdr.startsWith("Bearer ")) {
+            return;
+        }
+        refreshToken = authHdr.substring(7);
+        usrEml = jwtSrv.extractUsrnm(refreshToken);
+        if (usrEml != null) {
+            var usr = this.secUsrRepo.findByEml(usrEml).orElseThrow();
+            if (jwtSrv.isTokenValid(refreshToken, usr)) {
+                var accessTkn = jwtSrv.generateToken(usr);
+                revokeAllUsrTkns(usr);
+                saveUsrTkn(usr, accessTkn);
+                var authResponse = AuthRsp.builder()
+                        .accessTkn(accessTkn)
+                        .refreshTkn(refreshToken)
+                        .build();
+
+                new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
+            }
+        }
     }
 
     private void revokeAllUsrTkns(SecUsr usr) {
